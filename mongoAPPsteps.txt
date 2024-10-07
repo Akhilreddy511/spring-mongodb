@@ -1,3 +1,80 @@
+global exception------------
+package com.example.vehicles.exception;
+
+import com.example.vehicles.dto.ErrorResponseDto;
+import com.example.vehicles.dto.StandardResponseDto;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@ControllerAdvice
+@RestController
+public class GlobalExceptionHandler {
+
+    // Handle RuntimeException and return a custom response
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<StandardResponseDto<ErrorResponseDto>> handleRuntimeException(RuntimeException ex) {
+        ErrorResponseDto errorResponse = new ErrorResponseDto();
+        errorResponse.setErrorMessage(ex.getMessage());
+        errorResponse.setErrorCode("RUNTIME_EXCEPTION");
+
+        StandardResponseDto<ErrorResponseDto> response = new StandardResponseDto<>(false, "Error occurred", errorResponse);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    // Handle MethodArgumentNotValidException (validation errors)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<StandardResponseDto<Map<String, String>>> handleValidationException(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+
+        StandardResponseDto<Map<String, String>> response = new StandardResponseDto<>(false, "Validation error", errors);
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    // Handle custom exceptions (e.g., Vehicle not found)
+    @ExceptionHandler(VehicleNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<StandardResponseDto<ErrorResponseDto>> handleVehicleNotFoundException(VehicleNotFoundException ex) {
+        ErrorResponseDto errorResponse = new ErrorResponseDto();
+        errorResponse.setErrorMessage(ex.getMessage());
+        errorResponse.setErrorCode("VEHICLE_NOT_FOUND");
+
+        StandardResponseDto<ErrorResponseDto> response = new StandardResponseDto<>(false, "Vehicle not found", errorResponse);
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    // Catch-all exception handler
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<StandardResponseDto<ErrorResponseDto>> handleGenericException(Exception ex) {
+        ErrorResponseDto errorResponse = new ErrorResponseDto();
+        errorResponse.setErrorMessage("An unexpected error occurred: " + ex.getMessage());
+        errorResponse.setErrorCode("INTERNAL_ERROR");
+
+        StandardResponseDto<ErrorResponseDto> response = new StandardResponseDto<>(false, "Unexpected error", errorResponse);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+---------------
+
+package com.example.vehicles.exception;
+
+public class VehicleNotFoundException extends RuntimeException {
+    public VehicleNotFoundException(String message) {
+        super(message);
+    }
+}
+
+-----------------
+
 package com.example.vehicles.service;
 
 import com.example.vehicles.dto.VehicleRequestDto;
