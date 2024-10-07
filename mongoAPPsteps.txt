@@ -1,0 +1,211 @@
+model
+
+package com.example.vehicles.model;
+
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Data
+@Document(collection = "vehicles")
+public class Vehicle {
+    @Id
+    private String id;
+    private String brand;
+    private String model;
+    private int year;
+    private double price;
+}
+
+
+vehile reposne DTO
+
+package com.example.vehicles.dto;
+
+import lombok.Data;
+
+@Data
+public class VehicleRequestDto {
+    private String brand;
+    private String model;
+    private int year;
+    private double price;
+}
+
+
+reposne DTO.
+
+package com.example.vehicles.dto;
+
+import lombok.Data;
+
+@Data
+public class VehicleResponseDto {
+    private String id;
+    private String brand;
+    private String model;
+    private int year;
+    private double price;
+}
+
+
+standard DTo
+
+package com.example.vehicles.dto;
+
+import lombok.Data;
+
+@Data
+public class StandardResponseDto<T> {
+    private boolean success;
+    private String message;
+    private T data;
+
+    public StandardResponseDto(boolean success, String message, T data) {
+        this.success = success;
+        this.message = message;
+        this.data = data;
+    }
+}
+
+
+error dto
+
+package com.example.vehicles.dto;
+
+import lombok.Data;
+
+@Data
+public class ErrorResponseDto {
+    private String errorMessage;
+    private String errorCode;
+}
+
+
+vehicle repository
+
+package com.example.vehicles.repository;
+
+import com.example.vehicles.model.Vehicle;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+public interface VehicleRepository extends MongoRepository<Vehicle, String> {
+}
+
+
+Create the Service Layer (VehicleService.java)
+
+package com.example.vehicles.service;
+
+import com.example.vehicles.dto.VehicleRequestDto;
+import com.example.vehicles.dto.VehicleResponseDto;
+import com.example.vehicles.model.Vehicle;
+import com.example.vehicles.repository.VehicleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class VehicleService {
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    public VehicleResponseDto createVehicle(VehicleRequestDto requestDto) {
+        Vehicle vehicle = new Vehicle();
+        vehicle.setBrand(requestDto.getBrand());
+        vehicle.setModel(requestDto.getModel());
+        vehicle.setYear(requestDto.getYear());
+        vehicle.setPrice(requestDto.getPrice());
+        vehicle = vehicleRepository.save(vehicle);
+        return mapToResponseDto(vehicle);
+    }
+
+    public List<VehicleResponseDto> getAllVehicles() {
+        return vehicleRepository.findAll().stream()
+                .map(this::mapToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public VehicleResponseDto getVehicleById(String id) {
+        Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        return mapToResponseDto(vehicle);
+    }
+
+    public VehicleResponseDto updateVehicle(String id, VehicleRequestDto requestDto) {
+        Vehicle vehicle = vehicleRepository.findById(id).orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        vehicle.setBrand(requestDto.getBrand());
+        vehicle.setModel(requestDto.getModel());
+        vehicle.setYear(requestDto.getYear());
+        vehicle.setPrice(requestDto.getPrice());
+        vehicle = vehicleRepository.save(vehicle);
+        return mapToResponseDto(vehicle);
+    }
+
+    public void deleteVehicle(String id) {
+        vehicleRepository.deleteById(id);
+    }
+
+    private VehicleResponseDto mapToResponseDto(Vehicle vehicle) {
+        VehicleResponseDto responseDto = new VehicleResponseDto();
+        responseDto.setId(vehicle.getId());
+        responseDto.setBrand(vehicle.getBrand());
+        responseDto.setModel(vehicle.getModel());
+        responseDto.setYear(vehicle.getYear());
+        responseDto.setPrice(vehicle.getPrice());
+        return responseDto;
+    }
+}
+
+
+Step 9: Create the Controller Layer (VehicleController.java)
+
+package com.example.vehicles.controller;
+
+import com.example.vehicles.dto.StandardResponseDto;
+import com.example.vehicles.dto.VehicleRequestDto;
+import com.example.vehicles.dto.VehicleResponseDto;
+import com.example.vehicles.service.VehicleService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/vehicles")
+public class VehicleController {
+
+    @Autowired
+    private VehicleService vehicleService;
+
+    @PostMapping
+    public StandardResponseDto<VehicleResponseDto> createVehicle(@RequestBody VehicleRequestDto requestDto) {
+        VehicleResponseDto createdVehicle = vehicleService.createVehicle(requestDto);
+        return new StandardResponseDto<>(true, "Vehicle created successfully", createdVehicle);
+    }
+
+    @GetMapping
+    public StandardResponseDto<List<VehicleResponseDto>> getAllVehicles() {
+        List<VehicleResponseDto> vehicles = vehicleService.getAllVehicles();
+        return new StandardResponseDto<>(true, "Vehicle list retrieved successfully", vehicles);
+    }
+
+    @GetMapping("/{id}")
+    public StandardResponseDto<VehicleResponseDto> getVehicleById(@PathVariable String id) {
+        VehicleResponseDto vehicle = vehicleService.getVehicleById(id);
+        return new StandardResponseDto<>(true, "Vehicle retrieved successfully", vehicle);
+    }
+
+    @PutMapping("/{id}")
+    public StandardResponseDto<VehicleResponseDto> updateVehicle(@PathVariable String id, @RequestBody VehicleRequestDto requestDto) {
+        VehicleResponseDto updatedVehicle = vehicleService.updateVehicle(id, requestDto);
+        return new StandardResponseDto<>(true, "Vehicle updated successfully", updatedVehicle);
+    }
+
+    @DeleteMapping("/{id}")
+    public StandardResponseDto<Void> deleteVehicle(@PathVariable String id) {
+        vehicleService.deleteVehicle(id);
+        return new StandardResponseDto<>(true, "Vehicle deleted successfully", null);
+    }
+}
