@@ -17,6 +17,7 @@ public class PersonServiceImpl implements PersonService {
 
     @Override
     public PersonDTO save(PersonDTO PersonDTO) {
+        System.out.println("PersonServiceImpl.save");
         return new PersonDTO(personRepository.save(PersonDTO.toPersonEntity()));
     }
 
