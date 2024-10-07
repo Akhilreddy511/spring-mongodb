@@ -1,3 +1,99 @@
+package com.example.vehicles.service;
+
+import com.example.vehicles.dto.VehicleRequestDto;
+import com.example.vehicles.dto.VehicleResponseDto;
+
+import java.util.List;
+
+public interface VehicleService {
+
+    VehicleResponseDto createVehicle(VehicleRequestDto requestDto);
+
+    List<VehicleResponseDto> getAllVehicles();
+
+    VehicleResponseDto getVehicleById(String id);
+
+    VehicleResponseDto updateVehicle(String id, VehicleRequestDto requestDto);
+
+    void deleteVehicle(String id);
+}
+-----------IMP--
+package com.example.vehicles.service.impl;
+
+import com.example.vehicles.dto.VehicleRequestDto;
+import com.example.vehicles.dto.VehicleResponseDto;
+import com.example.vehicles.exception.VehicleNotFoundException;
+import com.example.vehicles.model.Vehicle;
+import com.example.vehicles.repository.VehicleRepository;
+import com.example.vehicles.service.VehicleService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class VehicleServiceImpl implements VehicleService {
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    @Override
+    public VehicleResponseDto createVehicle(VehicleRequestDto requestDto) {
+        Vehicle vehicle = new Vehicle();
+        vehicle.setBrand(requestDto.getBrand());
+        vehicle.setModel(requestDto.getModel());
+        vehicle.setYear(requestDto.getYear());
+        vehicle.setPrice(requestDto.getPrice());
+        vehicle = vehicleRepository.save(vehicle);
+        return mapToResponseDto(vehicle);
+    }
+
+    @Override
+    public List<VehicleResponseDto> getAllVehicles() {
+        return vehicleRepository.findAll().stream()
+                .map(this::mapToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public VehicleResponseDto getVehicleById(String id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException("Vehicle with ID " + id + " not found"));
+        return mapToResponseDto(vehicle);
+    }
+
+    @Override
+    public VehicleResponseDto updateVehicle(String id, VehicleRequestDto requestDto) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException("Vehicle with ID " + id + " not found"));
+        vehicle.setBrand(requestDto.getBrand());
+        vehicle.setModel(requestDto.getModel());
+        vehicle.setYear(requestDto.getYear());
+        vehicle.setPrice(requestDto.getPrice());
+        vehicle = vehicleRepository.save(vehicle);
+        return mapToResponseDto(vehicle);
+    }
+
+    @Override
+    public void deleteVehicle(String id) {
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new VehicleNotFoundException("Vehicle with ID " + id + " not found"));
+        vehicleRepository.delete(vehicle);
+    }
+
+    private VehicleResponseDto mapToResponseDto(Vehicle vehicle) {
+        VehicleResponseDto responseDto = new VehicleResponseDto();
+        responseDto.setId(vehicle.getId());
+        responseDto.setBrand(vehicle.getBrand());
+        responseDto.setModel(vehicle.getModel());
+        responseDto.setYear(vehicle.getYear());
+        responseDto.setPrice(vehicle.getPrice());
+        return responseDto;
+    }
+}
+------------------------------------
+
 model
 
 package com.example.vehicles.model;
