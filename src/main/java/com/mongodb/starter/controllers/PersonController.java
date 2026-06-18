@@ -2,8 +2,8 @@ package com.mongodb.starter.controllers;
 
 import com.mongodb.starter.dtos.PersonDTO;
 import com.mongodb.starter.services.PersonService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.bson.diagnostics.Logger;
+import org.bson.diagnostics.Loggers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +14,7 @@ import java.util.List;
 @RequestMapping("/api")
 public class PersonController {
 
-    private final static Logger LOGGER = LoggerFactory.getLogger(PersonController.class);
+    private final static Logger LOGGER = Loggers.getLogger(PersonController.class.getName());
     private final PersonService personService;
 
     public PersonController(PersonService personService) {
